@@ -3,8 +3,46 @@
 #include "./MOSP.h"
 #include "../PTAPI-main/include/PT.h"
 
-
 using namespace std;
+
+void saveResults(const string& fn, const solMOSP& sol, int elapsed, int trocas, int readForm) {
+    string basename = fn.substr(fn.find_last_of("/\\") + 1);
+    string name_no_ext = basename.substr(0, basename.find_last_of('.'));
+    
+    vector<string> parts;
+    stringstream ss(name_no_ext);
+    string token;
+    while (getline(ss, token, '-')) parts.push_back(token);
+
+    string dimensao;
+    if (parts.size() >= 3) {
+        dimensao = parts[1] + " " + parts[2];
+    } else {
+        dimensao = "?";
+    }
+
+    string dir = (readForm) ? "resultados" : "resultados-challenge";
+    filesystem::create_directories(dir);
+    string out_name = dir + "/" + name_no_ext + "_res.txt";
+
+    ofstream ofs(out_name);
+    if (!ofs.is_open()) {
+        cerr << "Erro ao abrir arquivo de resultados: " << out_name << endl;
+        return;
+    }
+
+
+    ofs << dimensao << '\n'
+        << elapsed << '\n'
+        << sol.evalSol << '\n'
+        << trocas << '\n'
+        << sol.maxNumberPiecesPerPatern << '\n';
+
+    for (int i : sol.sol) {
+        ofs << i << ' ';
+    }
+    ofs.close();
+}
 
 int main(int argc, char* argv[])
 {
@@ -17,6 +55,7 @@ int main(int argc, char* argv[])
 	int tempUp = 50;
 	int tempD = 1;
 	int uType = 0;
+    int read = 0;
 	// int thN = thread::hardware_concurrency();	
 	int thN = 2;
 	vector<string> arguments(argv + 1, argv + argc);	
@@ -46,53 +85,30 @@ int main(int argc, char* argv[])
             tempUp = stoi(arguments[i+1]);
         else if(arguments[i]== "--THREAD_USED")
             thN = stoi(arguments[i+1]);
+        else if(arguments[i]== "--READ")
+            read = stoi(arguments[i+1]);
     }
 	
 	// Create MOSP object
-	MOSP* prob = new MOSP(fn);
+	MOSP* prob = new MOSP(fn, read);
 	
 	// Create and start PT 
 	PT<solMOSP> algo(tempIni,tempfim,tempN,MCL,PTL,tempD,uType,tempUp);
 	ExecTime et;
-	solMOSP sol = algo.start(thN, prob);
+    ResultPT<solMOSP> resultado = algo.start(thN, prob);
+    solMOSP sol = resultado.best;             // pega a melhor solução
 	int elapsed = et.getTimeMs();
+    int trocas = resultado.numTrocas;   
 
-	string basename = fn.substr(fn.find_last_of("/\\") + 1);
-    string name_no_ext = basename.substr(0, basename.find_last_of('.'));
-    vector<string> parts;
-    stringstream ss(name_no_ext);
-    string token;
-    while (getline(ss, token, '-')) parts.push_back(token);
+	saveResults(fn, sol, elapsed, trocas, read);
 
-    string dimensao;
-    if (parts.size() >= 3) {
-        dimensao = parts[1] + " " + parts[2];
-    } else {
-        dimensao = "?";
-    }
-
-    // Garante existência da pasta "resultados"
-    filesystem::create_directories("resultados");
-
-    // Prepara nome do arquivo de saída
-    string out_name = "resultados/" + name_no_ext + "_res.txt";
-    ofstream ofs(out_name);
-    if (!ofs.is_open()) {
-        cerr << "Erro ao abrir arquivo de resultados: " << out_name << endl;
-        return 1;
-    }
-
-    // Grava resultados: Dimensão, Tempo, Valor da solução, Solução (índices)
-    ofs << dimensao << '\n'
-        << elapsed << '\n'
-        << sol.evalSol << '\n';
-    for (int i: sol.sol) {
-        ofs << i << ' ';
-    }
-    ofs.close();
+    // cout << dimensao << '\n'
+    //     << elapsed << '\n'
+    //     << sol.evalSol << '\n'
+    //     << trocas << '\n';
+    // for (int i: sol.sol) {
+    //     cout << i << ' ';
+    // }
 
 	return 0;
 }
-
-// g++ mainMOSP.cpp ../include/*.h ./MOSP.cpp -std=c++20 -Wshadow -Wall -o mainMOSP -O3 -Wno-unused-result -lpthread -march=native
-// ./mainMOSP ../Frinhani/Instances/Random-1000-1000-2-1.txt --TEMP_INIT 0.1 --TEMP_FIM 1 --N_REPLICAS 2 --MCL 50 --PTL 60 --TEMP_DIST 3 --TYPE_UPDATE 1 --TEMP_UPDATE 20

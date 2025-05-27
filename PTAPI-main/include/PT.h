@@ -19,6 +19,12 @@
 #include "NodeSwap.h"
 
 template<typename S>
+struct ResultPT {
+    S best;
+    int numTrocas;
+};
+
+template<typename S>
 class PT{
 	private:
 		// PT varibles
@@ -35,7 +41,7 @@ class PT{
 		PT(float tempMin, float tempMax, int tempL, int MKL, int PTL, int tempD, int upType, int tempUp); // constructor
 
 		~PT();
-		S start(int thN, Problem<S>* prob);
+		ResultPT<S> start(int thN, Problem<S>* prob);
 		S getBestSol();
 		std::deque<double> tempPG(float tempMin, float tempMax, int tempL); 
 		std::deque<double> tempExp(float tempMin, float tempMax, int tempL); 
@@ -85,10 +91,9 @@ PT<S>::~PT(){
 }
 
 template<typename S>
-S PT<S>::start(int thN, Problem<S>* prob){	
+ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){	
 	Consumer<S>* consumer = new Consumer<S>(thN);
 	atomic<int> PTLEnd = PTL_;
-
 
 	//variaveis
 	Node* nMCMC;
@@ -191,9 +196,13 @@ S PT<S>::start(int thN, Problem<S>* prob){
 
 
 consumer->finished();
-best = consumer->getBestSol();
-return best;
 
+ResultPT<S> res;
+res.best = consumer->getBestSol();
+res.numTrocas = consumer->getTotalAccepts(); ;
+// res.numTrocas = 100;
+
+return res;
 }
 
 template<typename S>

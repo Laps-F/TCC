@@ -27,6 +27,7 @@
 
 struct solMOSP: public solution{ 
   std::vector<int> sol; 
+  int maxNumberPiecesPerPatern;
 };
 
 
@@ -35,6 +36,7 @@ class MOSP: public Problem<solMOSP>{
 
 		int numberPatterns;
 		int numberPieces;
+		int maxNumberPiecesPerPatern;
 
 		std::string fn;
 		// std::vector<std::vector<bool>> incidenceMatrix;
@@ -43,12 +45,11 @@ class MOSP: public Problem<solMOSP>{
 
 		
 	public:
-		MOSP(std::string filename);
+		MOSP(std::string filename, int readForm);
 		~MOSP();
 		solMOSP construction();
 		solMOSP neighbor(solMOSP sol);
 		double evaluate(solMOSP sol);
-
 };
 
 #endif 

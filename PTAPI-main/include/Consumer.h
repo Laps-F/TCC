@@ -27,6 +27,7 @@ class Consumer{
 		int maxEnd{0};
 		S bestSol;
 	public:		
+		atomic<int> totalAccepts{0};
 		Consumer(unsigned nTh);
 		void execAsync(Node* item);
 		void run(unsigned i);
@@ -40,10 +41,11 @@ class Consumer{
 		atomic<int>* getIndexPT();
 		atomic<int>* getMaxDif();
 		int getStopC();
+ 		int getTotalAccepts();
 };
 
-
-
+template<typename S>
+int Consumer<S>::getTotalAccepts() { return totalAccepts.load(); }
 template<typename S>
 Consumer<S>::Consumer(unsigned nTh){
 	

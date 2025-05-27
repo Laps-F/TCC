@@ -1,7 +1,6 @@
 #include "MOSP.h"
 
-MOSP::MOSP(std::string filename){
-	
+MOSP::MOSP(std::string filename, int readForm){
 	fn = filename;
     std::ifstream file(filename);
 	std::string line; 
@@ -11,25 +10,45 @@ MOSP::MOSP(std::string filename){
         return;
     }	
 
-    if (filename.find("/mosp_instances/") != std::string::npos) {
+    if (filename.find("/Challenge/") != std::string::npos) {
         std::string ignoredLine;
         getline(file, ignoredLine);
     }
+
     file >> numberPatterns >> numberPieces;
 
     patternPieces.resize(numberPatterns);
     stackSizeEvaluation.resize(numberPieces, 0);
-
-    for (int j = 0; j < numberPieces; j++) {
-        for (int i = 0; i < numberPatterns; i++) {
-            int value;
-            file >> value;
-            if (value == 1) {
-                patternPieces[i].push_back(j); // armazena o índice da peça (j) associada ao padrão (i)
-                stackSizeEvaluation[j]++; //armezan a quantidade de vezes que cada peça aparece nos padrões
+    maxNumberPiecesPerPatern = 0;
+    
+    if(readForm){
+        for (int j = 0; j < numberPatterns; j++) {
+            for (int i = 0; i < numberPieces; i++) {
+                int value;
+                file >> value;
+                if (value == 1) {
+                    patternPieces[j].push_back(i); // armazena o índice da peça (j) associada ao padrão (i)
+                    stackSizeEvaluation[i]++; //armazenam a quantidade de vezes que cada peça aparece nos padrões
+                }
+            }
+        }
+    } else {
+        for (int i = 0; i < numberPieces; i++) {
+            for (int j = 0; j < numberPatterns; j++) {
+                int value;
+                file >> value;
+                if (value == 1) {
+                    patternPieces[j].push_back(i); // armazena o índice da peça (j) associada ao padrão (i)
+                    stackSizeEvaluation[i]++; //armazenam a quantidade de vezes que cada peça aparece nos padrões
+                }
             }
         }
     }
+
+    for (int j = 0; j < numberPatterns; j++)
+        if(patternPieces[j].size() > maxNumberPiecesPerPatern){
+            maxNumberPiecesPerPatern = patternPieces[j].size();
+        }
 
     file.close();
 }
@@ -49,6 +68,7 @@ solMOSP MOSP::construction(){
 	std::shuffle(begin(ss.sol), end(ss.sol), mersenne_engine);
 
 	ss.evalSol = evaluate(ss);
+    ss.maxNumberPiecesPerPatern = maxNumberPiecesPerPatern;
 	ss.Nup = false;
 	ss.Ndown = false;
 
@@ -89,6 +109,7 @@ solMOSP MOSP::construction(){
 solMOSP MOSP::neighbor(solMOSP sol) {
     solMOSP s;
     s.sol = sol.sol;
+    s.maxNumberPiecesPerPatern = sol.maxNumberPiecesPerPatern;
 
     std::random_device rnd_device;
     std::mt19937 mersenne_engine {rnd_device()};
@@ -114,6 +135,9 @@ double MOSP::evaluate(solMOSP sol) {
 
     std::vector<int> stack(numberPieces, CLOSED);
 
+    std::vector<int> vet(numberPieces);
+    vet = stackSizeEvaluation;
+
     int openStacks = 0;
     int closedStacks = 0;
     int maxOpenStacks = -1;
@@ -122,14 +146,14 @@ double MOSP::evaluate(solMOSP sol) {
         int index = sol.sol[i]; // padrão atual da solução
 
         for (int peca : patternPieces[index]) {
-            stackSizeEvaluation[peca]--; // uma unidade da peça foi produzida
+            vet[peca]--; // uma unidade da peça foi produzida
 
             if (stack[peca] == CLOSED) {
                 openStacks++;           // nova pilha aberta
                 stack[peca] = OPEN;
             }
 
-            if (stackSizeEvaluation[peca] == 0) {
+            if (vet[peca] == 0) {
                 closedStacks++;         // pilha fechada
                 stack[peca] = CLOSED;
             }
