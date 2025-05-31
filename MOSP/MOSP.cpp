@@ -21,7 +21,7 @@ MOSP::MOSP(std::string filename, int readForm){
     stackSizeEvaluation.resize(numberPieces, 0);
     maxNumberPiecesPerPatern = 0;
     
-    if(readForm){
+    if(readForm){ //leitura arquivos do rafael
         for (int j = 0; j < numberPatterns; j++) {
             for (int i = 0; i < numberPieces; i++) {
                 int value;
@@ -32,7 +32,7 @@ MOSP::MOSP(std::string filename, int readForm){
                 }
             }
         }
-    } else {
+    } else { // leitura dos outros arquivos
         for (int i = 0; i < numberPieces; i++) {
             for (int j = 0; j < numberPatterns; j++) {
                 int value;

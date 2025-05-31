@@ -35,7 +35,7 @@ void saveResults(const string& fn, const solMOSP& sol, int elapsed, int trocas, 
     ofs << dimensao << '\n'
         << elapsed << '\n'
         << sol.evalSol << '\n'
-        << trocas << '\n'
+        // << trocas << '\n'
         << sol.maxNumberPiecesPerPatern << '\n';
 
     for (int i : sol.sol) {

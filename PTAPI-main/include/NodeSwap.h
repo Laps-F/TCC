@@ -82,7 +82,6 @@ void NodeSwap<S>::run(){
 	if(deltaBeta >= 0){									
 		swap();							
 		++accept;
-		pool->totalAccepts++;
 	}else{
 		//Calc exchange probability
 		double probab;
@@ -91,7 +90,6 @@ void NodeSwap<S>::run(){
 		if(dis(gen) <= probab){
 			swap();	
 			++accept;
-			pool->totalAccepts++;
 		} 
 	} // End if/else
 			
