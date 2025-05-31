@@ -194,15 +194,14 @@ ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){
 	//start exec
 	consumer->execAsync(nMCMCAux);
 
+	consumer->finished();
 
-consumer->finished();
+	ResultPT<S> res;
+	res.best = consumer->getBestSol();
+	// res.numTrocas = consumer->getTotalAccepts();//execAtual que ta no Node
+	res.numTrocas = 100000;
 
-ResultPT<S> res;
-res.best = consumer->getBestSol();
-res.numTrocas = consumer->getTotalAccepts(); ;
-// res.numTrocas = 100;
-
-return res;
+	return res;
 }
 
 template<typename S>

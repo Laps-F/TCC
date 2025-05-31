@@ -65,7 +65,7 @@ bool lerSolucao(const string& nomeArquivo, int& valorSolu) {
 
     string ignoredLine1, ignoredLine2;
     getline(fin, ignoredLine1);
-    getline(fin, ignoredLine2);
+    // getline(fin, ignoredLine2);
 
 
     ordem.resize(numberPatterns);
