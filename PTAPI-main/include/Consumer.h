@@ -26,6 +26,8 @@ class Consumer{
 		atomic_int end{0};
 		int maxEnd{0};
 		S bestSol;
+		vector<S> initAll;
+		S initFromBest;
 	public:		
 		Consumer(unsigned nTh);
 		void execAsync(Node* item);
@@ -33,6 +35,7 @@ class Consumer{
 		void finished();
 		bool theEnd();
 		bool theEnd(S sol_);
+		bool theEnd(S sol_, S init_);
 		void setMaxEnd(int maxEnd_);
 		void setMaxEnd();
 		S getBestSol();
@@ -40,7 +43,11 @@ class Consumer{
 		atomic<int>* getIndexPT();
 		atomic<int>* getMaxDif();
 		int getStopC();
+		vector<S> getInitAll();
+		S getInitFromBest();
 };
+
+
 
 template<typename S>
 Consumer<S>::Consumer(unsigned nTh){
@@ -97,6 +104,21 @@ return (maxEnd <= end);
 }
 
 template<typename S>
+bool Consumer<S>::theEnd(S sol_, S init_){
+ 
+	{
+		unique_lock<mutex> lock{mtxSol};
+		end++;
+		if (sol_.evalSol<bestSol.evalSol){
+			bestSol = sol_;
+			initFromBest = init_;
+		};
+		initAll.push_back(init_);
+	}
+return (maxEnd <= end);	
+}
+
+template<typename S>
 void Consumer<S>::setMaxEnd(int maxEnd_){
 	maxEnd = maxEnd_;	
 }
@@ -130,6 +152,16 @@ template<typename S>
 void Consumer<S>::execAsync(Node* item){
 	auto i = index++;
 	buff[i % threadCount].push(item);
+}
+
+template<typename S>
+S Consumer<S>::getInitFromBest(){
+	return initFromBest;
+}
+
+template<typename S>
+vector<S> Consumer<S>::getInitAll(){
+	return initAll;
 }
 
 #endif

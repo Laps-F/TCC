@@ -16,6 +16,7 @@ class NodeMCMC: public Node{
 		double temp;
 		Problem<S>* prob;
 		S sol;
+		S init;
 		S neigh;
 		S neighAux;
 		int accept = 0; 
@@ -35,7 +36,7 @@ class NodeMCMC: public Node{
 
 	public:
 		
-		NodeMCMC(int MCL_,atomic<int>* PTL_, double temp_, Problem<S>* prob_,Consumer<S>* pool_);
+		NodeMCMC(int MCL_,atomic<int>* PTL_, atomic<int>* passoGatilho_, double temp_, Problem<S>* prob_,Consumer<S>* pool_, string nodeName_);
 		~NodeMCMC();
 		void run();
 		bool ready();
@@ -57,21 +58,28 @@ class NodeMCMC: public Node{
 		void setTemp(double t);
 		void setSol(S sol_);
 		bool setBestSol(S sol_);
+		bool setBestSol(S sol_, int i);
 };
 
 
 template<typename S>
-NodeMCMC<S>::NodeMCMC(int MCL_, atomic<int>* PTL_, double temp_, Problem<S>* prob_,Consumer<S>* pool_)
+NodeMCMC<S>::NodeMCMC(int MCL_, atomic<int>* PTL_, atomic<int>* passoGatilho_, double temp_, Problem<S>* prob_,Consumer<S>* pool_, string nodeName_)
 :MCL(MCL_)
 ,temp(temp_)
 ,prob(prob_)
 ,pool(pool_)
 {
 	execMax = PTL_;
+	passoGatilho = passoGatilho_;
 	indexPT = pool_->getIndexPT();
 	sol = prob->construction();
+	init = sol;
 	bestSol = sol;
-				
+	nodeName = nodeName_;
+	
+	#ifdef DEBUG
+	lockPrint("init Solution: " + std::to_string(sol.evalSol) + " Node: " + nodeName);
+	#endif
 }
 
 template<typename S>
@@ -81,6 +89,7 @@ NodeMCMC<S>::~NodeMCMC(){
 template<typename S>
 void NodeMCMC<S>::run(){
 	
+
 	// calc MCMC
 	for (int i = 0; i < MCL; i++){
 		
@@ -90,7 +99,9 @@ void NodeMCMC<S>::run(){
 		// Calc evaluate function 
 		neigh.evalSol = prob->evaluate(neigh); 
 		
-		// Save best sol			
+		// Save best sol
+		neigh.mcmc = i;
+		neigh.ptl = execAtual;			
 		setBestSol(neigh);
 				
 		//calc delta
@@ -115,8 +126,8 @@ void NodeMCMC<S>::run(){
 		} //End if/else 				
 	} //End for
 
-	if(theEnd()){
-		pool->theEnd(bestSol);
+	if(theEnd(bestSol.ptl)){
+		pool->theEnd(bestSol, init);
 		endN = true;
 	}
 	
@@ -204,10 +215,15 @@ void NodeMCMC<S>::setSol(S sol_){
 template<typename S>
 bool NodeMCMC<S>::setBestSol(S sol_){
 	if (sol_.evalSol<bestSol.evalSol) {
+		#ifdef DEBUG
+		lockPrint("Best Solution: " + std::to_string(sol_.evalSol) + " execAtual: " + std::to_string(execAtual) + " Node: " + nodeName);
+		#endif
+
 		bestSol=sol_;
+		// bestSol.ptl = execAtual;
 		return true;
 	}
-	
+
 	return false;
 }
 

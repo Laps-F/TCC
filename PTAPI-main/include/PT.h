@@ -18,6 +18,7 @@
 #include "NodeMCMC.h"
 #include "NodeSwap.h"
 
+
 template<typename S>
 struct ResultPT {
     S best;
@@ -33,16 +34,22 @@ class PT{
 		int tempL_; // temp size
 		int MKL_; // MC length
 		int PTL_; // number of swaps
+		int passoGatilho_; // passo do gatilho
 		int ut; // update type
 		int tempUpdate; // number of swaps to update de temp
 		std::deque<double> allTemps;
 		S best;
+		S initFromBest;
+		std::vector<S> initAll;
+		
 	public:
-		PT(float tempMin, float tempMax, int tempL, int MKL, int PTL, int tempD, int upType, int tempUp); // constructor
+		PT(float tempMin, float tempMax, int tempL, int MKL, int PTL, int passoGatilho, int tempD, int upType, int tempUp); // constructor
 
 		~PT();
 		ResultPT<S> start(int thN, Problem<S>* prob);
 		S getBestSol();
+		S getInitFromBest(){return initFromBest;}
+		vector<S> getInitAll(){return initAll;}
 		std::deque<double> tempPG(float tempMin, float tempMax, int tempL); 
 		std::deque<double> tempExp(float tempMin, float tempMax, int tempL); 
 		std::deque<double> tempLinear(float tempMin, float tempMax, int tempL); 
@@ -52,12 +59,13 @@ class PT{
 
 // inicialização do PT. valores da temp. tamanho da MCMC e o Número de propostas de troca entre temp
 template<typename S>
-PT<S>::PT(float tempMin, float tempMax, int tempL, int MKL, int PTL, int tempD, int upType, int tempUp)
+PT<S>::PT(float tempMin, float tempMax, int tempL, int MKL, int PTL, int passoGatilho, int tempD, int upType, int tempUp)
 	: tempMin_(tempMin)
 	, tempMax_(tempMax)
 	, tempL_(tempL)
 	, MKL_(MKL)
 	, PTL_(PTL)
+	, passoGatilho_(passoGatilho)
 	, ut(upType)
 	, tempUpdate(tempUp)
 {
@@ -94,6 +102,7 @@ template<typename S>
 ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){	
 	Consumer<S>* consumer = new Consumer<S>(thN);
 	atomic<int> PTLEnd = PTL_;
+	atomic<int> passoGatilhoAtomic = passoGatilho_;
 
 	//variaveis
 	Node* nMCMC;
@@ -104,22 +113,24 @@ ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){
 	Node* nUpTempAux;
 		    
     // Creates the first MCMC node
-	nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd,allTemps.front(), prob, consumer);
+	nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd,&passoGatilhoAtomic,allTemps.front(), prob, consumer, "MCMC1");
 	((NodeMCMC<S>*)nMCMC)->setFirstTemp(); // check First temp 
 	consumer->setMaxEnd();
 	allTemps.pop_front();
-	nMCMCAux = nMCMC; 
+	nMCMCAux = nMCMC;
 		
     // Creates the second MCMC node
-	nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd,allTemps.front(), prob, consumer);
+	nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd,&passoGatilhoAtomic,allTemps.front(), prob, consumer, "MCMC2");
 	consumer->setMaxEnd();
 	allTemps.pop_front();
 	
 	// Creates the first exchange node
-	if(!ut) nSwap = new NodeSwap<S>(nMCMC,nMCMCAux, consumer, &PTLEnd);
+	if(!ut) {
+		nSwap = new NodeSwap<S>(nMCMC,nMCMCAux, consumer, &PTLEnd, "Swap1");
+	}
 	else{ 
 		nUpTemp = new NodeTempUp<S>(nMCMC,nMCMCAux, NULL, consumer,ut, tempL_);
-		nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,nUpTemp, consumer, &PTLEnd, tempUpdate);	
+		nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,nUpTemp, consumer, &PTLEnd, tempUpdate, "Swap1");	
 	}
 	
 	consumer->setMaxEnd();
@@ -148,19 +159,21 @@ ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){
 	nSwapAux = nSwap;
 	nUpTempAux = nUpTemp;
 	
-	// Create the remaining nodes	
+	// Create the remaining nodes
+	int count = 0;	
 	while(!allTemps.empty()){
-
-		nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd, allTemps.front(),prob, consumer);
+		nMCMC = new NodeMCMC<S>(MKL_,&PTLEnd,&passoGatilhoAtomic,allTemps.front(),prob, consumer, "MCMC" + std::to_string(count+3));
 		consumer->setMaxEnd();
 		allTemps.pop_front();
 
 		// Creates the exchange node
-		if(!ut) nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,consumer,&PTLEnd);
+		if(!ut) {
+			nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,consumer,&PTLEnd, "Swap" + std::to_string(count+2));
+		}
 		else {
 			nUpTemp = new NodeTempUp<S>(nMCMC,nMCMCAux, nUpTempAux, consumer,ut, tempL_);
 			((NodeTempUp<S>*)nUpTempAux)->setUpTempUp(nUpTemp);
-			nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,nUpTemp,consumer, &PTLEnd, tempUpdate);
+			nSwap = new NodeSwap<S>(nMCMC,nMCMCAux,nUpTemp,consumer, &PTLEnd, tempUpdate, "Swap" + std::to_string(count+2));
 		}
 		
 		consumer->setMaxEnd();
@@ -194,14 +207,16 @@ ResultPT<S> PT<S>::start(int thN, Problem<S>* prob){
 	//start exec
 	consumer->execAsync(nMCMCAux);
 
-	consumer->finished();
 
-	ResultPT<S> res;
-	res.best = consumer->getBestSol();
-	// res.numTrocas = consumer->getTotalAccepts();//execAtual que ta no Node
-	res.numTrocas = 100000;
+consumer->finished();
+ResultPT<S> res;
+res.best = consumer->getBestSol();
+// best = consumer->getBestSol();
+initFromBest = consumer->getInitFromBest();
+initAll = consumer->getInitAll();
 
-	return res;
+return res;
+
 }
 
 template<typename S>

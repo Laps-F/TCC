@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <filesystem>
+#include <bitset>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -11,6 +12,7 @@ namespace fs = std::filesystem;
 int numberPatterns, numberPieces;
 vector<vector<int>> patternPieces;
 vector<int> ordem;
+vector<bitset<1000>> patternBitsets;
 
 // Lê a entrada no formato invertido: peças x padrões
 bool lerMatriz(const string& nomeArquivo) {
@@ -34,6 +36,15 @@ bool lerMatriz(const string& nomeArquivo) {
             if (value == 1) {
                 patternPieces[j].push_back(i); // armazena o índice da peça (j) associada ao padrão (i)
             }
+        }
+    }
+
+    patternBitsets.resize(numberPatterns);
+
+    // Pré-processa os padrões para bitsets
+    for (int i = 0; i < numberPatterns; i++) {
+        for (int p : patternPieces[i]) {
+            patternBitsets[i].set(p);
         }
     }
 
@@ -65,7 +76,7 @@ bool lerSolucao(const string& nomeArquivo, int& valorSolu) {
 
     string ignoredLine1, ignoredLine2;
     getline(fin, ignoredLine1);
-    // getline(fin, ignoredLine2);
+    getline(fin, ignoredLine2);
 
 
     ordem.resize(numberPatterns);
@@ -82,22 +93,38 @@ bool lerSolucao(const string& nomeArquivo, int& valorSolu) {
 
 // Calcula o número máximo de pilhas abertas seguindo a ordem da solução
 int calcularMaxPilhasAbertas() {
+    bitset<1000> piecesRead;
+    vector<bool> patternUsed(numberPatterns, false);
+    vector<int> patternSequence;
+
+    for (int piece : ordem) {
+        piecesRead.set(piece);
+
+        for (int pattern = 0; pattern < numberPatterns; pattern++) {
+            if (patternUsed[pattern]) continue;
+
+            if ((patternBitsets[pattern] & piecesRead) == patternBitsets[pattern]) {
+                patternSequence.push_back(pattern);
+                patternUsed[pattern] = true;
+            }
+        }
+    }
+
     vector<int> ultimaOcorrencia(numberPieces, -1);
     vector<int> ativa(numberPieces, 0); // 1 se a peça está ativa (pilha aberta)
 
-     for (int i = 0; i < numberPatterns; ++i) {
-        int padrao = ordem[i];
+    for (int i = 0; i < numberPatterns; ++i) {
+        int padrao = patternSequence[i];
         for (int peca : patternPieces[padrao]) { 
             ultimaOcorrencia[peca] = padrao;
         }
     }
 
-
     int pilhasAbertas = 0;
     int maxPilhas = 0;
 
     for (int i = 0; i < numberPatterns; ++i) {
-        int padrao = ordem[i];
+        int padrao = patternSequence[i];
 
         // Abrir novas pilhas
         for (int peca : patternPieces[padrao]) {

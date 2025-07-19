@@ -12,11 +12,17 @@ NOME_PLANILHA_GOOGLE = "Função de avaliação 1"
 ARQUIVO_CREDENCIAIS = "shaped-buttress-383520-602982384f84.json"
 # ARQUIVO_CREDENCIAIS = "arctic-ocean-459800-g7-f4353aaaa5bb.json"
 
-REGEX_INFO = re.compile(r'Random-(\d+)-(\d+)-(\d+)-(\d+)_res\.txt')
+REGEX_INFO = re.compile(r'Random-(\d+)-(\d+)-(\d+)-(\d+)(?:\((\d+)\))?_res\.txt')
+
+import os
+from collections import defaultdict
+from statistics import mean
 
 def carregar_dados(pasta_resultados):
-    dados, conjuntos= [], {}
+    dados, dados_media, dados_min = [], [], []
+    instancias_agrupadas = defaultdict(list)
     conjuntos_por_tamanho = defaultdict(list)
+    conjuntos = {}
 
     for nome_arquivo in os.listdir(pasta_resultados):
         if not nome_arquivo.endswith(".txt"):
@@ -27,30 +33,37 @@ def carregar_dados(pasta_resultados):
         with open(caminho, "r") as f:
             linhas = [linha.strip() for linha in f if linha.strip()]
 
-        if len(linhas) < 3:
+        if len(linhas) < 4:
             print(f"Aviso: arquivo {nome_arquivo} parece incompleto")
             continue
 
         nome_instancia = linhas[0]
         tempo = float(linhas[1])
         valor_solucao = float(linhas[2])
-        trocas = linhas[3]
-        max_pecas_padrao = linhas[4]
+        trocas = int(linhas[3])
+        max_pecas_padrao = int(linhas[4])
         solucao = ' '.join(linhas[5:])
 
         match = REGEX_INFO.match(nome_arquivo)
         if match:
-            linhas_, colunas_, conjunto, _ = match.groups()
+            linhas_, colunas_, conjunto, instancia, execucao = match.groups()
             tamanho = f"{linhas_}x{colunas_}"
             conjunto_nome = f"conjunto {conjunto}"
+            instancia = f"{instancia}"
+            chave_execucao = (tamanho, conjunto_nome, instancia)
         else:
             tamanho = "Desconhecido"
             conjunto_nome = "Desconhecido"
+            instancia = "Desconhecida"
+            execucao = "Desconhecida"
+            chave_execucao = (tamanho, conjunto_nome, instancia)
 
         entrada = {
             "arquivo": nome_arquivo,
             "tamanho": tamanho,
             "conjunto": conjunto_nome,
+            "instancia": instancia,
+            "execucao": execucao,
             "tempo (ms)": tempo,
             "valor solução": valor_solucao,
             "trocas": trocas,
@@ -59,26 +72,87 @@ def carregar_dados(pasta_resultados):
         }
 
         dados.append(entrada)
+        instancias_agrupadas[chave_execucao].append(entrada)
 
-        chave = (entrada["conjunto"], entrada["tamanho"])
-        conjuntos_por_tamanho[chave].append(entrada)
+    # Calcular médias por instância
+    for (tamanho, conjunto, instancia), entradas in instancias_agrupadas.items():
+        entrada_media = {
+            "tamanho": tamanho,
+            "conjunto": conjunto,
+            "instancia": instancia,
+            "tempo (ms)": mean(e["tempo (ms)"] for e in entradas),
+            "valor solução": mean(e["valor solução"] for e in entradas),
+            "trocas": mean(e["trocas"] for e in entradas),
+            "max_pecas_padrao": mean(e["max_pecas_padrao"] for e in entradas),
+        }
 
-        conjuntos.setdefault(conjunto_nome, []).append(entrada)
+        dados_media.append(entrada_media)
 
-    return dados, conjuntos_por_tamanho
+        chave_conjunto = (conjunto, tamanho)
+        conjuntos_por_tamanho[chave_conjunto].append(entrada_media)
+        conjuntos.setdefault(conjunto, []).append(entrada_media)
 
-def calcular_estatisticas(conjuntos_por_tamanho):
+    for (tamanho, conjunto, instancia), entradas in instancias_agrupadas.items():
+        entrada_melhor = min(entradas, key=lambda e: e["valor solução"])
+        
+        entrada_min = {
+            "tamanho": tamanho,
+            "conjunto": conjunto,
+            "instancia": instancia,
+            "tempo (ms)": entrada_melhor["tempo (ms)"],
+            "valor solução": entrada_melhor["valor solução"],
+            "trocas": entrada_melhor["trocas"],
+            "max_pecas_padrao": mean(e["max_pecas_padrao"] for e in entradas),
+        }
+
+        dados_min.append(entrada_min)
+
+    return dados, dados_media, dados_min, conjuntos_por_tamanho
+
+
+# def calcular_estatisticas(conjuntos_por_tamanho):
+#     estat_conjuntos = []
+
+#     for (conjunto_nome, tamanho), lista in conjuntos_por_tamanho.items():
+#         tempos = [d["tempo (ms)"] for d in lista]
+#         valores = [d["valor solução"] for d in lista]
+
+#         # Encontrar a melhor solução e o índice dela
+#         melhor_valor = min(valores)
+#         idx_melhor = valores.index(melhor_valor)
+#         # melhor_trocas = lista[idx_melhor]["trocas"]
+#         # melhor_sol = lista[idx_melhor]["solução"]
+
+#         estat_conjuntos.append({
+#             "conjunto": conjunto_nome,
+#             "tamanho": tamanho,
+#             "n_instâncias": len(lista),
+#             "média tempo (ms)": mean(tempos),
+#             "média valor solução": mean(valores),
+#             # "trocas associadas": melhor_trocas,
+#         })
+
+#     return estat_conjuntos
+
+def calcular_estatisticas(conjuntos_por_tamanho, dados_min):
     estat_conjuntos = []
 
     for (conjunto_nome, tamanho), lista in conjuntos_por_tamanho.items():
         tempos = [d["tempo (ms)"] for d in lista]
         valores = [d["valor solução"] for d in lista]
 
-        # Encontrar a melhor solução e o índice dela
-        melhor_valor = min(valores)
-        idx_melhor = valores.index(melhor_valor)
-        melhor_trocas = lista[idx_melhor]["trocas"]
-        melhor_sol = lista[idx_melhor]["solução"]
+        # Filtrar dados_min correspondentes ao conjunto e tamanho
+        candidatos = [
+            d for d in dados_min
+            if d["conjunto"] == conjunto_nome and d["tamanho"] == tamanho
+        ]
+
+        if candidatos:
+            media_valor_min = mean(d["valor solução"] for d in candidatos)
+            media_tempo_min = mean(d["tempo (ms)"] for d in candidatos)
+        else:
+            media_valor_min = None
+            media_tempo_min = None
 
         estat_conjuntos.append({
             "conjunto": conjunto_nome,
@@ -86,13 +160,11 @@ def calcular_estatisticas(conjuntos_por_tamanho):
             "n_instâncias": len(lista),
             "média tempo (ms)": mean(tempos),
             "média valor solução": mean(valores),
-            "melhor valor solução": melhor_valor,
-            "trocas associadas": melhor_trocas,
-            "melhor solução": melhor_sol
+            "média tempo melhor solução (ms)": media_tempo_min,
+            "média melhor valor solução": media_valor_min,
         })
 
     return estat_conjuntos
-
 
 def exportar_para_google_sheets(df_dict, nome_planilha, cred_path):
     credenciais = Credentials.from_service_account_file(
@@ -190,30 +262,45 @@ def sort_dataframe(dataframe):
     dataframe[["n_linhas", "n_colunas"]] = dataframe["tamanho"].str.extract(r"(\d+)x(\d+)").astype(int)
     dataframe["conjunto_num"] = dataframe["conjunto"].str.extract(r"(\d+)").astype(int)
 
-    dataframe = dataframe.sort_values(["n_linhas", "n_colunas", "conjunto_num"])
+    if "instancia" in dataframe.columns:
+        dataframe["instancia_num"] = dataframe["instancia"].astype(int)
+        if "execucao" in dataframe.columns:
+            dataframe["execucao_num"] = dataframe["execucao"].astype(int)
+            sort_cols = ["n_linhas", "n_colunas", "conjunto_num", "instancia_num", "execucao_num"]
+        else:
+            sort_cols = ["n_linhas", "n_colunas", "conjunto_num", "instancia_num"]
+    else:
+        sort_cols = ["n_linhas", "n_colunas", "conjunto_num"]
 
-    dataframe = dataframe.drop(columns=["n_linhas", "n_colunas", "conjunto_num"])
+    dataframe = dataframe.sort_values(sort_cols)
+
+    dataframe = dataframe.drop(columns=sort_cols)
 
     return dataframe
 
 def main():
-    dados, conjuntos = carregar_dados(PASTA_RESULTADOS)
-
-    estat_conjuntos = calcular_estatisticas(conjuntos)
+    dados, dados_media, dados_min, conjuntos = carregar_dados(PASTA_RESULTADOS)
+    estat_conjuntos = calcular_estatisticas(conjuntos, dados_min)
     
     df = pd.DataFrame(dados)
-
     df = sort_dataframe(df)
 
-    df_conjuntos = pd.DataFrame(estat_conjuntos)
+    df_media = pd.DataFrame(dados_media)
+    df_media = sort_dataframe(df_media)
 
+    df_melhores = pd.DataFrame(dados_min)
+    df_melhores = sort_dataframe(df_melhores)
+
+    df_conjuntos = pd.DataFrame(estat_conjuntos)
     df_conjuntos = sort_dataframe(df_conjuntos)
 
     df_pageRank_conjuntos = montar_estatisticas_pageRank()
 
     abas = {
-        "Resultados": df,
-        "Resumo por Conjunto": df_conjuntos,
+        "Resultados Completos": df,
+        "Resumo Por Istância (Médias)": df_media,
+        "Resumo Por Instância (Melhores)": df_melhores,
+        "Resumo por Conjunto ": df_conjuntos,
         "Resumo PageRank por Conjunto": df_pageRank_conjuntos,
     }
 

@@ -22,12 +22,14 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
+#include <bitset>
 #include "../PTAPI-main/include/Problem.h"
 
 
 struct solMOSP: public solution{ 
   std::vector<int> sol; 
   int maxNumberPiecesPerPatern;
+  int construcTime;
 };
 
 
@@ -37,19 +39,26 @@ class MOSP: public Problem<solMOSP>{
 		int numberPatterns;
 		int numberPieces;
 		int maxNumberPiecesPerPatern;
-
+		int neighborStrt;
+		int constructSolutionTime;
+		std::atomic<int> constructionCallIndex{0};
+		
 		std::string fn;
 		// std::vector<std::vector<bool>> incidenceMatrix;
 		std::vector<int> stackSizeEvaluation;
 		std::vector<std::vector<int>> patternPieces;
-
+    	std::vector<std::bitset<1000>> patternBitsets;
+		std::vector<std::vector<int>> patternsPorPeca;
 		
 	public:
-		MOSP(std::string filename, int readForm);
+		MOSP(std::string filename, int readForm, int neighborStrategy);
 		~MOSP();
 		solMOSP construction();
 		solMOSP neighbor(solMOSP sol);
-		double evaluate(solMOSP sol);
+		solMOSP neighborSwap(solMOSP sol);
+		solMOSP neighbor2Opt(solMOSP sol);
+		solMOSP neighborInsertion(solMOSP sol);
+		double evaluate(solMOSP& sol);
 };
 
 #endif 
