@@ -81,46 +81,6 @@ MOSP::MOSP(std::string filename, int readForm, int neighborStrategy){
 MOSP::~MOSP(){	
 }
 
-// solMOSP MOSP::construction(){
-// 	solMOSP ss;
-// 	std::random_device rnd_device;
-// 	std::mt19937 mersenne_engine {rnd_device()};
-
-// 	for (int i = 0; i < numberPatterns; i++) {
-// 		ss.sol.push_back(i);
-// 	}
-
-// 	std::shuffle(begin(ss.sol), end(ss.sol), mersenne_engine);
-
-// 	ss.evalSol = evaluate(ss);
-//     ss.maxNumberPiecesPerPatern = maxNumberPiecesPerPatern;
-// 	ss.Nup = false;
-// 	ss.Ndown = false;
-
-// 	return ss;
-// }
-
-// solMOSP MOSP::construction() {
-
-//     solMOSP ss;
-//     std::random_device rnd_device;
-//     std::mt19937 mersenne_engine {rnd_device()};
-
-    
-// 	for (int i = 0; i < numberPieces; i++) {
-// 		ss.sol.push_back(i);
-// 	}
-
-//     std::shuffle(begin(ss.sol), end(ss.sol), mersenne_engine);
-
-//     ss.evalSol = evaluate(ss);
-//     ss.maxNumberPiecesPerPatern = maxNumberPiecesPerPatern;
-// 	ss.Nup = false;
-// 	ss.Ndown = false;
-
-// 	return ss;
-// }
-
 solMOSP MOSP::construction() {
     int idx = constructionCallIndex.fetch_add(1);
 
@@ -153,11 +113,6 @@ solMOSP MOSP::construction() {
 
         std::shuffle(begin(ss.sol), end(ss.sol), mersenne_engine);
     }
-
-    // for (int i = 0; i < numberPatterns; i++) {
-    //     std::cout<<ss.sol[i]<< " - ";
-    // }
-    // std::cout<<"terminou"<<std::endl;
 
     ss.evalSol = evaluate(ss);
     ss.maxNumberPiecesPerPatern = maxNumberPiecesPerPatern;
@@ -286,90 +241,6 @@ double MOSP::evaluate(solMOSP& sol) {
     int maxOpenStacks = -1;
     // int freqMaxOpenStacks = 0;
 
-    // usar um set de padrões, ou seja, um conjunto de padroes que va retirando padroes conforme eles sao sequenciados
-    // for (int piece : sol.sol) {
-    //     piecesRead.set(piece);
-
-    //     for (int pattern = 0; pattern < numberPatterns; pattern++) {
-    //         if (patternUsed[pattern]) continue;
-
-    //         // if ((patternBitsets[pattern] & piecesRead) == patternBitsets[pattern]) {
-    //         if ((patternBitsets[pattern] & ~piecesRead).none()) {
-    //             patternSequence.push_back(pattern);
-    //             patternUsed[pattern] = true;
-    //         }
-    //     }
-    // }
-
-    // std::vector<int> disponiveis(numberPatterns);
-    // std::iota(disponiveis.begin(), disponiveis.end(), 0);
-
-    // for(int piece : sol.sol) {
-    //     piecesRead.set(piece);
-    //     disponiveis.erase(
-    //         std::remove_if(disponiveis.begin(), disponiveis.end(),
-    //             [&](int pattern){
-    //                 if ((patternBitsets[pattern] & ~piecesRead).none()) {
-    //                     patternSequence.push_back(pattern);
-    //                     patternUsed[pattern] = true;
-    //                     return true;  // remove do vetor
-    //                 }
-    //                 return false;
-    //             }),
-    //         disponiveis.end());
-    // }
-
-    // std::list<int> disponiveis(numberPatterns);
-    // std::iota(disponiveis.begin(), disponiveis.end(), 0);
-    // for(int piece : sol.sol) {
-    //     piecesRead.set(piece);
-    //     disponiveis.remove_if([&](int pattern) {
-    //         if ((patternBitsets[pattern] & ~piecesRead).none()) {
-    //             patternSequence.push_back(pattern);
-    //             patternUsed[pattern] = true;
-    //             return true;  // remove da lista
-    //         }
-    //         return false;
-    //     });
-    // }
-
-
-    // std::vector<int> ativos;
-    // ativos.reserve(numberPatterns);
-    // for (int i = 0; i < numberPatterns; ++i) ativos.push_back(i);
-
-    // for (int piece : sol.sol) {
-    //     piecesRead.set(piece);
-
-    //     // Refiltra os ativos de forma eficiente
-    //     std::vector<int> novosAtivos;
-    //     for (int pattern : ativos) {
-    //         if ((patternBitsets[pattern] & ~piecesRead).none()) {
-    //             patternSequence.push_back(pattern);
-    //             patternUsed[pattern] = true;
-    //         } else {
-    //             novosAtivos.push_back(pattern); // mantém ativo
-    //         }
-    //     }
-
-    //     ativos.swap(novosAtivos); // atualiza
-    // }
-
-    // std::bitset<1000> patternUsed;
-
-    // for (int piece : sol.sol) {
-    //     piecesRead.set(piece);
-
-    //     for (int pattern = 0; pattern < numberPatterns; ++pattern) {
-    //         if (patternUsed.test(pattern)) continue;
-
-    //         if ((patternBitsets[pattern] & ~piecesRead).none()) {
-    //             patternSequence.push_back(pattern);
-    //             patternUsed.set(pattern);
-    //         }
-    //     }
-    // }
-
     for (int piece : sol.sol) {
         piecesRead.set(piece);
         const auto& candidatos = patternsPorPeca[piece];
@@ -383,8 +254,6 @@ double MOSP::evaluate(solMOSP& sol) {
             }
         }
     }
-
-    // std::cout << "patternSequence.size(): " << patternSequence.size() << std::endl;
 
     for (int i = 0; i < numberPatterns; i++) {
         // int index = sol.sol[i]; // padrão atual da solução

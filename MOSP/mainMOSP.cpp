@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
             read = stoi(arguments[i+1]);
     }
 	
-    for(int i=0; i<3; i++) {
+    for(int i=0; i<5; i++) {
         // Create MOSP object
 
         MOSP* prob = new MOSP(fn, read, mType);
