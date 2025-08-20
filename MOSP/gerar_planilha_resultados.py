@@ -7,10 +7,9 @@ import gspread
 from gspread_dataframe import set_with_dataframe
 from google.oauth2.service_account import Credentials
 
-PASTA_RESULTADOS = "resultados-base"
-NOME_PLANILHA_GOOGLE = "Resultados base"
+PASTA_RESULTADOS = "resultados"
+NOME_PLANILHA_GOOGLE = "Função de avaliação 1"
 ARQUIVO_CREDENCIAIS = "shaped-buttress-383520-602982384f84.json"
-# ARQUIVO_CREDENCIAIS = "arctic-ocean-459800-g7-f4353aaaa5bb.json"
 
 REGEX_INFO = re.compile(r'Random-(\d+)-(\d+)-(\d+)-(\d+)(?:\((\d+)\))?_res\.txt')
 
@@ -40,9 +39,9 @@ def carregar_dados(pasta_resultados):
         nome_instancia = linhas[0]
         tempo = float(linhas[1])
         valor_solucao = float(linhas[2])
-        # trocas = int(linhas[3])
-        max_pecas_padrao = int(linhas[3])
-        solucao = ' '.join(linhas[4:])
+        trocas = int(linhas[3])
+        max_pecas_padrao = int(linhas[4])
+        solucao = ' '.join(linhas[5:])
 
         match = REGEX_INFO.match(nome_arquivo)
         if match:
@@ -66,7 +65,7 @@ def carregar_dados(pasta_resultados):
             "execucao": execucao,
             "tempo (ms)": tempo,
             "valor solução": valor_solucao,
-            # "trocas": trocas,
+            "trocas": trocas,
             "max_pecas_padrao": max_pecas_padrao,
             "solução": solucao,
         }
@@ -83,7 +82,7 @@ def carregar_dados(pasta_resultados):
             "tempo (ms)": mean(e["tempo (ms)"] for e in entradas),
             "valor solução": mean(e["valor solução"] for e in entradas),
             "desvio valor solução": stdev([e["valor solução"] for e in entradas]) if len([e["valor solução"] for e in entradas]) > 1 else 0.0,
-            # "trocas": mean(e["trocas"] for e in entradas),
+            "trocas": mean(e["trocas"] for e in entradas),
             "max_pecas_padrao": mean(e["max_pecas_padrao"] for e in entradas),
         }
 
@@ -102,7 +101,7 @@ def carregar_dados(pasta_resultados):
             "instancia": instancia,
             "tempo (ms)": entrada_melhor["tempo (ms)"],
             "valor solução": entrada_melhor["valor solução"],
-            # "trocas": entrada_melhor["trocas"],
+            "trocas": entrada_melhor["trocas"],
             "max_pecas_padrao": mean(e["max_pecas_padrao"] for e in entradas),
         }
 
