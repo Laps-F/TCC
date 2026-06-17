@@ -44,12 +44,12 @@ def analisar_par(nome_grupo, grupo_dados):
     
     # Escolha do teste
     if p_shapiro > 0.05:
-        stat, p_valor = ttest_rel(val_pt, val_bks)
+        stat, p_valor = ttest_rel(val_pt, val_bks, alternative='two-sided')
         teste = "t-Student"
     else:
         try:
             # wilcox descarta empates no cálculo matemático para não enviesar o p-valor
-            stat, p_valor = wilcoxon(val_pt, val_bks, zero_method='wilcox')
+            stat, p_valor = wilcoxon(val_pt, val_bks, zero_method='wilcox', alternative='two-sided')
         except ValueError:
             p_valor = 1.0 
         teste = "Wilcoxon"

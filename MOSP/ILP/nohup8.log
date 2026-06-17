@@ -1,0 +1,14 @@
+nohup: ignorando entrada
+Academic license - for non-commercial use only - expires 2027-06-08
+Iniciando montagem do modelo...
+Modelo montado. Iniciando otimização...
+Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64)
+Thread count: 20 physical cores, 40 logical processors, using up to 1 threads
+Optimize a model with 1017493742 rows, 1273859 columns and 3049205334 nonzeros
+Model fingerprint: 0xad4001f6
+Variable types: 0 continuous, 1273859 integer (1273858 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+00]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 2e+00]

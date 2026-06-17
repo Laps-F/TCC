@@ -1,0 +1,7 @@
+Benchmark,Instâncias,p_valor (Não-Inferioridade),Conclusão
+GLOBAL (Todos),720,7.160477605306727e-71,Não-Inferior (Aceito)
+Carvalho_Soma,150,1.7961834673155508e-12,Não-Inferior (Aceito)
+Challenge,46,6.281759965531819e-07,Não-Inferior (Aceito)
+Chu_Stuckey,200,1.454914671919328e-25,Não-Inferior (Aceito)
+Faggioli,300,6.5637453714823055e-49,Não-Inferior (Aceito)
+SCOOP,24,5.960464477539063e-08,Não-Inferior (Aceito)

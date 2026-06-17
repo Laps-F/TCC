@@ -49,12 +49,12 @@ def analisar_par(nome_grupo, grupo_dados, controle, concorrente):
     
     # Escolha do teste pareado
     if p_shapiro > 0.05:
-        stat, p_valor = ttest_rel(val_controle, val_concorrente)
+        stat, p_valor = ttest_rel(val_controle, val_concorrente, alternative='less')
         teste = "t-Student"
     else:
         try:
             # zero_method='wilcox' descarta as instâncias empatadas durante o cálculo do p-valor
-            stat, p_valor = wilcoxon(val_controle, val_concorrente, zero_method='wilcox')
+            stat, p_valor = wilcoxon(val_controle, val_concorrente, zero_method='wilcox', alternative='less')
         except ValueError:
             p_valor = 1.0 
         teste = "Wilcoxon"
@@ -101,7 +101,7 @@ print("=== Tabela de Resultados Estatísticos: PT-MOSP vs Literatura ===")
 print(tabela_final.to_string(index=False))
 
 # Exportação para facilitar colocar no artigo/texto:
-tabela_final.to_csv("tabela_estatistica_final_artigo.csv", index=False)
+tabela_final.to_csv("tabela_estatistica_PTxAll.csv", index=False)
 
 # Exportação direta para código LaTeX (ideal para o formato do seu documento)
 # print("\n=== Código LaTeX da Tabela ===")

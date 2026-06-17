@@ -53,7 +53,7 @@ def save_log_csv(log_data, filename="resultados_mosp.csv"):
             writer.writeheader()
         writer.writerow(log_data)
 
-def solve_mosp_cp_strict(instance_name, num_items, num_patterns, matrix_A, time_limit=21600.0):
+def solve_mosp_cp_strict(instance_name, num_items, num_patterns, matrix_A, time_limit=3600.0):
     model = cp_model.CpModel()
 
     max_open_stacks = model.NewIntVar(0, num_items, 'max_open_stacks')

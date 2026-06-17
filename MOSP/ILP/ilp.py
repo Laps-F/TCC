@@ -5,8 +5,8 @@ import csv
 import time
 from mip import Model, xsum, minimize, BINARY, INTEGER, OptimizationStatus
 
-def read_mosp_matrix(file_path):
-    """Lê a matriz binária do arquivo."""
+def read_mosp_matrix(file_path, ler_transposta=False):
+    """Lê a matriz binária do arquivo e opcionalmente retorna sua transposta."""
     try:
         with open(file_path, 'r') as f:
             lines = f.readlines()
@@ -20,7 +20,11 @@ def read_mosp_matrix(file_path):
         row = [int(val) for val in line.strip().split()]
         if len(row) == 2 and len(matrix) == 0: continue
         matrix.append(row)
-            
+    
+    if ler_transposta:
+        # zip(*matrix) desempacota a matriz e agrupa os elementos por coluna
+        matrix = [list(coluna) for coluna in zip(*matrix)]
+
     num_items = len(matrix)
     num_patterns = len(matrix[0])
     edges = set()
@@ -31,8 +35,8 @@ def read_mosp_matrix(file_path):
             for idx2 in range(idx1 + 1, len(items_in_pattern)):
                 u, v = items_in_pattern[idx1], items_in_pattern[idx2]
                 edges.add((min(u, v), max(u, v)))
+                
     return num_items, list(edges)
-
 def save_log_csv(log_data, filename="resultados_mosp.csv"):
     file_exists = os.path.isfile(filename)
     headers = ["Instancia", "Modelo_Formulacao", "Solver", "Versao_Solver",
@@ -50,7 +54,7 @@ def solve_mosp(file_path, num_items, edges, time_limit=21600.0):
     E.update((v, u) for u, v in edges)
         
     # Usando CBC por não requerer licença adicional
-    m = Model(name="MOSP_Interval_Graph", solver_name="CBC")
+    m = Model(name="MOSP_Interval_Graph", solver_name="GRB")
     m.verbose = 1
     m.threads = 1
     
@@ -116,8 +120,8 @@ def solve_mosp(file_path, num_items, edges, time_limit=21600.0):
         log_data = {
             "Instancia": os.path.basename(file_path),
             "Modelo_Formulacao": "ILP_Grafos_Intervalo",
-            "Solver": "MIP/CBC",
-            "Versao_Solver": "N/A",
+            "Solver": "MIP/GRB",
+            "Versao_Solver": "Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64)",
             "Tempo_Limite_Seg": time_limit,
             "Tempo_Execucao_Seg": round(wall_time, 2),
             "Status": status_str,
@@ -135,5 +139,5 @@ if __name__ == "__main__":
     
     arquivo = sys.argv[1]
     tempo = float(sys.argv[2]) if len(sys.argv) > 2 else 21600.0
-    n, arestas = read_mosp_matrix(arquivo)
+    n, arestas = read_mosp_matrix(arquivo, ler_transposta=True)
     solve_mosp(arquivo, n, arestas, time_limit=tempo)

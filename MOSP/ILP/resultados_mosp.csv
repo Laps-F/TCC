@@ -1,4 +1,8 @@
 Instancia,Modelo_Formulacao,Solver,Versao_Solver,Tempo_Limite_Seg,Tempo_Execucao_Seg,Status,Solucao_Corrente_Obj,Best_Bound,Gap_Percentual
 Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/CBC,N/A,30.0,0.0,UNKNOWN,,,
 Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/CBC,N/A,30.0,0.0,UNKNOWN,,,
-Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/CBC,N/A,21600.0,21871.81,CRASHED_SIGSEGV,,,
+Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/CBC,N/A,21600.0,21871.81,CRASHED_SIGSEGV,,,GP1.txt,ILP_Grafos_Intervalo,MIP/GRB,Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64),30.0,30.03,FEASIBLE,50,2,96.0
+Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/GRB,Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64),3600.0,3654.48,FEASIBLE,400,1,99.75
+Random-600-600-2-1.txt,ILP_Grafos_Intervalo,MIP/GRB,Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64),21600.0,0.0,OUT_OF_MEMORY,,,
+Random-400-400-2-1.txt,ILP_Grafos_Intervalo,MIP/GRB,Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64),21600.0,21653.08,FEASIBLE,400,1,99.75
+Random-1000-1000-2-1.txt,ILP_Grafos_Intervalo,MIP/GRB,Gurobi Optimizer version 9.1.2 build v9.1.2rc0 (linux64),21600.0,0.0,CRASHED_ParameterNotAvailable,,,

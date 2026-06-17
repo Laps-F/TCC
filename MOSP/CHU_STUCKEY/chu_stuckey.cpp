@@ -23,7 +23,7 @@ using namespace std;
 
 // Variáveis de Cronometragem
 auto mystart_time = chrono::high_resolution_clock::now();
-double time_limit_sec = 21600.0; // 6 horas padrão
+double time_limit_sec = 3600.0; // 6 horas padrão
 
 struct rusage starttime,optimaltime,totaltime,runtime,endtime,opttime;
 
